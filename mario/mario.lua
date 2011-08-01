@@ -207,8 +207,8 @@ function Mario:update()
 
 
 	-- x-movement
-	local lr = bool[love.keyboard.isDown "right"] -
-				bool[love.keyboard.isDown "left"]
+	local lr = bool[wall.input.right] - bool[wall.input.left]
+
 
 	self.dx = self.dx + lr
 	if lr == 0 then
@@ -246,7 +246,7 @@ function Mario:update()
 
 	level:scroll()
 
-	local jump = love.keyboard.isDown " "
+	local jump = wall.input.a
 
 	if self.dy == 0 and level:isSolid(self.x, self.y + 1) then
 		-- staning on ground
