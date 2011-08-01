@@ -1,4 +1,4 @@
 rain
 ====
-
-Based on Twobit's spalten, this is a simple rain with random coloured pixels.
+    
+Based on 2bt's spalten, this is a simple rain with random coloured pixels.
