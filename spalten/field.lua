@@ -6,12 +6,14 @@ require "draw"
 function Field:init(pos, key_state)
 	self.pos = pos
 	self.key_state = key_state
+	self.height = 15
+	self.width = 7
 
 	-- init clear grid
 	self.grid = {}
-	for i = 1, 13 do
+	for i = 1, self.height do
 		local row = {}
-		for j = 1, 6 do
+		for j = 1, self.width do
 			row[j] = 0
 		end
 		self.grid[i] = row
@@ -58,7 +60,7 @@ end
 
 
 function Field:newColumn()
-	self.x = 3
+	self.x = 4
 	self.y = 1
 	self.column[1] = math.random(self.level)
 	self.column[2] = math.random(self.level)
@@ -77,7 +79,7 @@ end
 
 
 function Field:collision()
-	if self.x < 1 or self.x > 6 or self.y > 13 then
+	if self.x < 1 or self.x > self.width or self.y > self.height then
 		return true
 	end
 	for y = math.max(1, self.y - 2), self.y do
@@ -92,9 +94,9 @@ end
 function Field:collapse()
 	local grid = self.grid
 	local ret = false
-	for x = 1, 6 do
+	for x = 1, self.width do
 		local drop = false
-		for y = 13, 1, -1 do
+		for y = self.height, 1, -1 do
 			drop = drop or grid[y][x] == 0
 			if drop then
 				grid[y][x] = grid[y - 1] and grid[y - 1][x] or 0
@@ -203,8 +205,8 @@ function Field:update()
 				-- lower the field
 				self.current_raise = self.current_raise - 1
 
-				for x = 1, 6 do
-					for y = 13, 2, -1 do
+				for x = 1, self.width do
+					for y = self.height, 2, -1 do
 						self.grid[y][x] = self.grid[y - 1][x]
 					end
 					self.grid[1][x] = 0
@@ -215,15 +217,15 @@ function Field:update()
 				-- raise the field
 				self.current_raise = self.current_raise + 1
 				self.state_delay = 2
-				for x = 1, 6 do
+				for x = 1, self.width do
 					if self.grid[1][x] > 0 then
 						self.state = "over"
 						self.state_delay = 30
 					end
-					for y = 1, 12 do
+					for y = 1, self.height-1 do
 						self.grid[y][x] = self.grid[y + 1][x]
 					end
-					self.grid[13][x] = -1
+					self.grid[self.height][x] = -1
 				end
 
 			else
@@ -250,12 +252,12 @@ function Field:findGemsInLine()
 	local grid = self.grid
 
 	local function addGem(x, y)
-		self.gems_in_line[y .. " " .. x] = { x = x, y = y }	
+		self.gems_in_line[y .. " " .. x] = { x = x, y = y }
 	end
 
 	-- [-] check
-	for y = 1, 13 do
-		for x = 1, 4 do
+	for y = 1, self.height do
+		for x = 1, self.width-2 do
 			if grid[y][x] > 0 and
 			   grid[y][x] == grid[y][x + 1] and
 			   grid[y][x] == grid[y][x + 2] then
@@ -267,8 +269,8 @@ function Field:findGemsInLine()
 		end
 	end
 	-- [|] check
-	for x = 1, 6 do
-		for y = 1, 11 do
+	for x = 1, self.width do
+		for y = 1, self.height-2 do
 			if grid[y][x] > 0 and
 			   grid[y][x] == grid[y + 1][x] and
 			   grid[y][x] == grid[y + 2][x] then
@@ -280,8 +282,8 @@ function Field:findGemsInLine()
 		end
 	end
 	-- [\] check
-	for y = 1, 11 do
-		for x = 1, 4 do
+	for y = 1, self.height-2 do
+		for x = 1, self.width-2 do
 			if grid[y][x] > 0 and
 			   grid[y][x] == grid[y + 1][x + 1] and
 			   grid[y][x] == grid[y + 2][x + 2] then
@@ -293,8 +295,8 @@ function Field:findGemsInLine()
 		end
 	end
 	-- [/] check
-	for y = 1, 11 do
-		for x = 3, 6 do
+	for y = 1, self.height-2 do
+		for x = 3, self.width do
 			if grid[y][x] > 0 and
 			   grid[y][x] == grid[y + 1][x - 1] and
 			   grid[y][x] == grid[y + 2][x - 2] then
