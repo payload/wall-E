@@ -11,18 +11,25 @@ function Field:init(pos, key_state)
 
 	-- init clear grid
 	self.grid = {}
-	for i = 1, self.height do
-		local row = {}
-		for j = 1, self.width do
-			row[j] = 0
-		end
-		self.grid[i] = row
-	end
+    for h = 1, self.width do
+        local layer = {}
+        for i = 1, self.height do
+            local row = {}
+            for j = 1, self.width do
+                row[j] = 0
+            end
+            layer[i] = row
+        end
+        self.grid[h] = layer
+    end
 
 	-- how many different sorts of gems
 	self.level = 5
 	-- inverse dropping speed
 	self.drop_delay = 20
+
+	-- start layer - 1
+	self.layer = 0
 
 	self.score = 0
 	self.drop_count = 0
@@ -60,6 +67,7 @@ end
 
 
 function Field:newColumn()
+    self.layer = (self.layer + 1) % self.width + 1
 	self.x = 4
 	self.y = 1
 	self.column[1] = math.random(self.level)
@@ -71,7 +79,7 @@ end
 function Field:pushColumn()
 	for y = 1, 3 do
 		if self.y - y + 1 > 0 then
-			self.grid[self.y - y + 1][self.x] = self.column[y]
+			self.grid[self.layer][self.y - y + 1][self.x] = self.column[y]
 		end
 	end
 end
@@ -83,7 +91,7 @@ function Field:collision()
 		return true
 	end
 	for y = math.max(1, self.y - 2), self.y do
-		if self.grid[y][self.x] ~= 0 then
+		if self.grid[self.layer][y][self.x] ~= 0 then
 			return true
 		end
 	end
@@ -94,13 +102,14 @@ end
 function Field:collapse()
 	local grid = self.grid
 	local ret = false
+	local z = self.layer
 	for x = 1, self.width do
 		local drop = false
 		for y = self.height, 1, -1 do
-			drop = drop or grid[y][x] == 0
+			drop = drop or grid[z][y][x] == 0
 			if drop then
-				grid[y][x] = grid[y - 1] and grid[y - 1][x] or 0
-				ret = grid[y][x] > 0 or ret
+				grid[z][y][x] = grid[z][y - 1] and grid[z][y - 1][x] or 0
+				ret = grid[z][y][x] > 0 or ret
 			end
 		end
 	end
@@ -159,7 +168,7 @@ function Field:update()
 
 			-- remove gems
 			for _, coords in pairs(self.gems_in_line) do
-				self.grid[coords.y][coords.x] = 0
+				self.grid[self.layer][coords.y][coords.x] = 0
 				self.score = self.score + 1
 			end
 			self.gems_in_line = {}
@@ -205,28 +214,32 @@ function Field:update()
 				-- lower the field
 				self.current_raise = self.current_raise - 1
 
-				for x = 1, self.width do
-					for y = self.height, 2, -1 do
-						self.grid[y][x] = self.grid[y - 1][x]
-					end
-					self.grid[1][x] = 0
-				end
+                for z = 1, self.width do
+                    for x = 1, self.width do
+                        for y = self.height, 2, -1 do
+                            self.grid[z][y][x] = self.grid[z][y - 1][x]
+                        end
+                        self.grid[z][1][x] = 0
+                    end
+                end
 				self.state_delay = 2
 
 			elseif self.current_raise < self.raise then
 				-- raise the field
 				self.current_raise = self.current_raise + 1
 				self.state_delay = 2
-				for x = 1, self.width do
-					if self.grid[1][x] > 0 then
-						self.state = "over"
-						self.state_delay = 30
-					end
-					for y = 1, self.height-1 do
-						self.grid[y][x] = self.grid[y + 1][x]
-					end
-					self.grid[self.height][x] = -1
-				end
+                for z = 1, self.width do
+                    for x = 1, self.width do
+                        if self.grid[z][1][x] > 0 then
+                            self.state = "over"
+                            self.state_delay = 30
+                        end
+                        for y = 1, self.height-1 do
+                            self.grid[z][y][x] = self.grid[z][y + 1][x]
+                        end
+                        self.grid[z][self.height][x] = -1
+                    end
+                end
 
 			else
 				self:newColumn()
@@ -250,6 +263,7 @@ function Field:findGemsInLine()
 	-- TODO: make the code look nicer
 
 	local grid = self.grid
+	local z = self.layer
 
 	local function addGem(x, y)
 		self.gems_in_line[y .. " " .. x] = { x = x, y = y }
@@ -258,9 +272,9 @@ function Field:findGemsInLine()
 	-- [-] check
 	for y = 1, self.height do
 		for x = 1, self.width-2 do
-			if grid[y][x] > 0 and
-			   grid[y][x] == grid[y][x + 1] and
-			   grid[y][x] == grid[y][x + 2] then
+			if grid[z][y][x] > 0 and
+			   grid[z][y][x] == grid[z][y][x + 1] and
+			   grid[z][y][x] == grid[z][y][x + 2] then
 				addGem(x, y)
 				addGem(x + 1, y)
 				addGem(x + 2, y)
@@ -271,9 +285,9 @@ function Field:findGemsInLine()
 	-- [|] check
 	for x = 1, self.width do
 		for y = 1, self.height-2 do
-			if grid[y][x] > 0 and
-			   grid[y][x] == grid[y + 1][x] and
-			   grid[y][x] == grid[y + 2][x] then
+			if grid[z][y][x] > 0 and
+			   grid[z][y][x] == grid[z][y + 1][x] and
+			   grid[z][y][x] == grid[z][y + 2][x] then
 				addGem(x, y)
 				addGem(x, y + 1)
 				addGem(x, y + 2)
@@ -284,9 +298,9 @@ function Field:findGemsInLine()
 	-- [\] check
 	for y = 1, self.height-2 do
 		for x = 1, self.width-2 do
-			if grid[y][x] > 0 and
-			   grid[y][x] == grid[y + 1][x + 1] and
-			   grid[y][x] == grid[y + 2][x + 2] then
+			if grid[z][y][x] > 0 and
+			   grid[z][y][x] == grid[z][y + 1][x + 1] and
+			   grid[z][y][x] == grid[z][y + 2][x + 2] then
 				addGem(x, y)
 				addGem(x + 1, y + 1)
 				addGem(x + 2, y + 2)
@@ -297,9 +311,9 @@ function Field:findGemsInLine()
 	-- [/] check
 	for y = 1, self.height-2 do
 		for x = 3, self.width do
-			if grid[y][x] > 0 and
-			   grid[y][x] == grid[y + 1][x - 1] and
-			   grid[y][x] == grid[y + 2][x - 2] then
+			if grid[z][y][x] > 0 and
+			   grid[z][y][x] == grid[z][y + 1][x - 1] and
+			   grid[z][y][x] == grid[z][y + 2][x - 2] then
 				addGem(x, y)
 				addGem(x - 1, y + 1)
 				addGem(x - 2, y + 2)

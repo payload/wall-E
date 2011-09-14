@@ -65,7 +65,7 @@ function Field:bot()
 					self:findGemsInLine()
 					local magic = self.combo_count * 4
 					for y2 = 1, 13 do
-						if math.max(unpack(self.grid[y2])) > 0 then
+						if math.max(unpack(self.grid[self.layer][y2])) > 0 then
 							magic = magic + y2
 							break
 						end
@@ -81,9 +81,9 @@ function Field:bot()
 
 
 					-- reverse the push
-					self.grid[self.y][self.x] = 0
-					self.grid[self.y - 1][self.x] = 0
-					self.grid[self.y - 2][self.x] = 0
+					self.grid[self.layer][self.y][self.x] = 0
+					self.grid[self.layer][self.y - 1][self.x] = 0
+					self.grid[self.layer][self.y - 2][self.x] = 0
 				end
 
 			end
