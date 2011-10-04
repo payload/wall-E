@@ -2,6 +2,10 @@ require "helper"
 require "wall"
 
 function p(x) print(x) return x end
+math.round = function (x)
+    local y = math.floor(x)
+    if y + 0.5 < x then return y+1 else return y end
+end
 
 DIRECTIONS = {
     { -1, -1 }, { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 },
@@ -22,22 +26,26 @@ end
 
 
 
+
 Plane = Object:new()
 function Plane:init()
-    self.color = "FFFFFF"
+    self.type = "Plane"
+    self.color = "CCCCCC"
     self.x = 0
     self.y = 0
     self.d = 2
     self.locks = {
         forward = TimeLock(4),
         turn = TimeLock(10),
+        shoot = TimeLock(9),
     }
     self.faster_forward_time = 2
-    self.faster_turn_time = 15
+    self.faster_turn_time = 5
     self.input = {
         faster = false,
         left = false,
         right = false,
+        shoot = false,
     }
     -- 012
     -- 345
@@ -59,13 +67,26 @@ function Plane:draw(sx, sy)
     for _, i in ipairs(self.pics[self.d]) do
         x = math.floor(self.x + i % 3 - sx)
         y = math.floor(self.y + i / 3 - sy)
-        if x >= 0 and x <= 15 and y >= 0 and y <= 15 then
+        if x >= 0 and x < 15 and y >= 0 and y < 15 then
             wall:pixel(x, y, c)
         end
     end
 end
 
 function Plane:update()
+    if self ~= game.player then
+        local tx, ty = game.player.x, game.player.y
+        local x, y = self.x, self.y
+        local a = math.atan2(tx - x, ty - y) + math.pi
+        a = math.round(a / math.pi / 2 * 8)
+        a = (-a + 1) % 8 + 1
+        if self.d ~= a then
+            local r = math.random()
+            if     r < 0.3 then self.input.left = true
+            elseif r < 0.6 then self.input.right = true
+            end
+        end
+    end
     if self.locks.forward:take() then
         local dir = DIRECTIONS[self.d]
         self.x = self.x + dir.x
@@ -73,8 +94,10 @@ function Plane:update()
         if self.input.faster then self:faster() end
         if self.input.left then self:left() end
         if self.input.right then self:right() end
+        if self.input.shoot then self:shoot() end
     end
     for k, v in pairs(self.locks) do self.locks[k]:dec() end
+    for k, v in pairs(self.input) do self.input[k] = false end
 end
 
 function Plane:faster()
@@ -99,12 +122,62 @@ function Plane:right()
     end
 end
 
+function Plane:shoot()
+    if self.locks.shoot:take() then
+        game:add_stuff(Bubs(self.x + 1, self.y + 1, self.d, self))
+    end
+end
+
+
+
+Bubs = Object:new()
+function Bubs:init(x, y, d, owner)
+    self.x = x or 0
+    self.y = y or 0
+    self.d = d or 1
+    self.owner = owner or nil
+    self.ttl = 15
+    self.locks = {
+        forward = TimeLock(1)
+    }
+end
+
+function Bubs:update()
+    self.ttl = self.ttl - 1
+    if self.ttl <= 0 then self.delete = true end
+    if self.locks.forward:take() then
+        local dir = DIRECTIONS[self.d]
+        self.x = self.x + dir.x
+        self.y = self.y + dir.y
+        for _, plane in ipairs(game.stuff) do
+            if plane.type == 'Plane' and plane ~= self.owner then
+                local x = self.x - plane.x
+                local y = self.y - plane.y
+                if x >= 0 and x < 3 and y >= 0 and y < 3 then
+                    plane.delete = true
+                    self.delete = true
+                end
+            end
+        end
+    end
+    for k, v in pairs(self.locks) do self.locks[k]:dec() end
+end
+
+function Bubs:draw(sx, sy)
+    local x = self.x - sx
+    local y = self.y - sy
+    local c = "FFFF00"
+    if x >= 0 and x < 15 and y >= 0 and y < 15 then
+        wall:pixel(x, y, c)
+    end
+end
+
 
 
 TimeLock = Object:new()
 function TimeLock:init(time)
     self.starttime = time
-    self.time = time
+    self.time = 0
 end
 
 function TimeLock:dec()
@@ -141,13 +214,20 @@ function Background:draw(sx, sy)
     end
 end
 
+tree = 1
+
 function Background:map_pixel(x, y)
-    if x ==  5 and y ==  5 then return "00FF00" end
-    if x == 13 and y == 13 then return "0000FF" end
+    local R = math.random()
+    if R < (0.4 / tree) then
+        tree = tree + 1
+        --return "0000FF"
+    else tree = 1
+    end
+    if R > 0.995 then return "AA0000" end
     local r, g, b
-    g = math.random(145, 150)
-    r = math.random(140, 145)
-    b = math.random(140, 150)
+    r = math.random(40, 60)
+    g = math.random(140, 160)
+    b = math.random(140, 160)
     return string.format("%02x%02x%02x", r, g, b)
 end
 
@@ -177,7 +257,12 @@ Game = Object:new()
 function Game:init()
     self.timeouts = {}
     self.player = Plane()
-    self.stuff = { Background(), self.player }
+    self.player.locks.forward.starttime = 5
+    self.player.locks.turn.starttime = 10
+    self.player.color = "FFFFFF"
+    self.stuff = { Background() }
+    for _ = 0, 10, 1 do table.insert(self.stuff, Plane()) end
+    table.insert(self.stuff, self.player)
     self.x = 0
     self.y = 0
 end
@@ -202,6 +287,7 @@ function Game:update()
         player.left = input.left
         player.right = input.right
         player.faster = input.up
+        player.shoot = input.a
     end
 
     local stay = {}
@@ -224,7 +310,7 @@ end
 
 function love.keypressed(key)
 	if key == "escape" then
-		love.event.push "q"
+		love.event.push("q")
 
 	elseif key == "f1" then
 		wall:record(true)
@@ -250,7 +336,6 @@ function love.update(dt)
     game:update()
 	wall:update_input()
 end
-
 
 function love.draw()
 	game:draw()
