@@ -207,6 +207,52 @@ end
 
 
 
+
+
+Infinity = Object:new()
+function Infinity:init()
+    self.cols = {}
+    self.cl = { 40, 140, 140 }
+    self.clanim = 1
+end
+
+function Infinity:create_pixel(x, y)
+    local r, g, b, c
+    if switches.colorcycle then
+        self.clanim = ((self.clanim + 1) % 3) + 1
+    end
+    if switches.moreorless then c = 1 else c = -1 end
+    self.cl[self.clanim] = math.max(0, math.min(160, self.cl[self.clanim] + c))
+    r = math.random(0, 20) + self.cl[1]
+    g = math.random(0, 20) + self.cl[2]
+    b = math.random(0, 20) + self.cl[3]
+    if r + g + b > 168 * 3 then
+        r, g, b = 0, 120, 0
+    end
+    return string.format("%02x%02x%02x", r, g, b)
+end
+
+function Infinity:draw(sx, sy)
+    for x = sx, sx + 15, 1 do
+        for y = sy, sy + 15, 1 do
+            local row, color = self.cols[x]
+            if not row then
+                row = {}
+                self.cols[x] = row
+            end
+            color = row[y]
+            if not color then
+                color = self:create_pixel(x, y)
+                row[y] = color
+            end
+            wall:pixel(x-1-sx, y-1-sy, color)
+        end
+    end
+end
+
+
+
+
 Background = Object:new()
 function Background:init()
     self.pixels = {}
@@ -270,11 +316,12 @@ end
 Game = Object:new()
 function Game:init()
     self.timeouts = {}
+    self.autopilot = false
     self.player = Plane()
     self.player.locks.forward.starttime = 5
     self.player.locks.turn.starttime = 10
     self.player.color = "FFFFFF"
-    self.stuff = { Background() }
+    self.stuff = { Infinity() }
     for _ = 0, 10, 1 do table.insert(self.stuff, Plane()) end
     table.insert(self.stuff, self.player)
     self.x = 0
@@ -305,10 +352,16 @@ function Game:update()
 
     if self.player then
         local player = self.player.input
-        player.left = input.left or random_bool(0.2)
-        player.right = input.right or random_bool(0.2)
-        player.faster = input.up or switches.faster
-        player.shoot = input.a or random_bool(0.1)
+        player.left = input.left
+        player.right = input.right
+        player.faster = input.up
+        player.shoot = input.a
+        if self.autopilot then
+            player.left = player.left or random_bool(0.2)
+            player.right = player.right or random_bool(0.2)
+            player.faster = player.faster or switches.faster
+            player.shoot = player.shoot or random_bool(0.1)
+        end
     end
 
     local stay = {}
