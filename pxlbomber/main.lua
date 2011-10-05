@@ -7,6 +7,15 @@ math.round = function (x)
     if y + 0.5 < x then return y+1 else return y end
 end
 
+function random_bool(x)
+    x = x or 0.5
+    if math.random() < x then
+        return true
+    else
+        return false
+    end
+end
+
 DIRECTIONS = {
     { -1, -1 }, { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 },
     { -1, 0 }
@@ -154,7 +163,9 @@ function Bubs:update()
                 local x = self.x - plane.x
                 local y = self.y - plane.y
                 if x >= 0 and x < 3 and y >= 0 and y < 3 then
-                    plane.delete = true
+                    --plane.delete = true
+                    plane.x = 0
+                    plane.y = 0
                     self.delete = true
                 end
             end
@@ -277,17 +288,24 @@ function Game:add_stuff(x)
     table.insert(self.stuff, x)
 end
 
+switches = { { "faster", 0 } }
+
 function Game:update()
     local input = wall.input[2]
 
-    --if input.up    then y = y - 1 end
-    --if input.down  then y = y + 1 end
+    for _, s in ipairs(switches) do
+        local k, p = unpack(s)
+        if random_bool(p) then
+            switches[k] = not switches[k]
+        end
+    end
+
     if self.player then
         local player = self.player.input
-        player.left = input.left
-        player.right = input.right
-        player.faster = input.up
-        player.shoot = input.a
+        player.left = input.left or random_bool(0.2)
+        player.right = input.right or random_bool(0.2)
+        player.faster = input.up or switches.faster
+        player.shoot = input.a or random_bool(0.1)
     end
 
     local stay = {}
