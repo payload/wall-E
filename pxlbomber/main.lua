@@ -1,6 +1,8 @@
 require "helper"
 require "wall"
 
+math.randomseed(os.time())
+
 function p(x) print(x) return x end
 math.round = function (x)
     local y = math.floor(x)
@@ -42,7 +44,7 @@ function Plane:init()
     self.color = "CCCCCC"
     self.x = 0
     self.y = 0
-    self.d = 2
+    self.d = math.random(1,8)
     self.locks = {
         forward = TimeLock(4),
         turn = TimeLock(10),
@@ -209,6 +211,8 @@ Background = Object:new()
 function Background:init()
     self.pixels = {}
     self.cur = { x = 0, y = 0 }
+    self.cl = { 40, 140, 140 }
+    self.clanim = 1
     self:set_pixels(0, 0)
 end
 
@@ -225,20 +229,19 @@ function Background:draw(sx, sy)
     end
 end
 
-tree = 1
-
 function Background:map_pixel(x, y)
-    local R = math.random()
-    if R < (0.4 / tree) then
-        tree = tree + 1
-        --return "0000FF"
-    else tree = 1
+    local r, g, b, c
+    if switches.colorcycle then
+        self.clanim = ((self.clanim + 1) % 3) + 1
     end
-    if R > 0.995 then return "AA0000" end
-    local r, g, b
-    r = math.random(40, 60)
-    g = math.random(140, 160)
-    b = math.random(140, 160)
+    if switches.moreorless then c = 1 else c = -1 end
+    self.cl[self.clanim] = math.max(0, math.min(160, self.cl[self.clanim] + c))
+    r = math.random(0, 20) + self.cl[1]
+    g = math.random(0, 20) + self.cl[2]
+    b = math.random(0, 20) + self.cl[3]
+    if r + g + b > 168 * 3 then
+        r, g, b = 0, 120, 0
+    end
     return string.format("%02x%02x%02x", r, g, b)
 end
 
@@ -288,7 +291,7 @@ function Game:add_stuff(x)
     table.insert(self.stuff, x)
 end
 
-switches = { { "faster", 0 } }
+switches = { { "faster", 0 }, { "colorcycle", 0.1 }, { "moreorless", 0.05 } }
 
 function Game:update()
     local input = wall.input[2]
