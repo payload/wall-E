@@ -2,19 +2,19 @@ require "helper"
 require "wall"
 
 function love.keypressed(key)
-	if key == "escape" then
-		love.event.push "q"
-	
-	end
-	
+    if key == "escape" then
+        love.event.push "q"
+
+    end
+
 end
 
 
 function love.load()
-	wall = Wall("ledwall", 1338, 3)
+    wall = Wall("ledwall", 1338, 3)
 
-	time = love.timer.getTime() * 1000
-    
+    time = love.timer.getTime() * 1000
+
     tick = 0
 
 end
@@ -27,21 +27,21 @@ fade3   = {"330000", "000033", "003300", "330033", "333300", "003333"}
 fade4   = {"000000", "000000", "000000", "000000", "000000", "000000"}
 
 function love.update(dt)
-	-- constant 30 FPS
-	local t = love.timer.getTime() * 1000
-	time = time + 1000 / 30
-	love.timer.sleep(time - t)
-        
-	if math.random(2) == 1 then
-	    local drop = { 
-	        x = math.random(0, 15),
+    -- constant 30 FPS
+    local t = love.timer.getTime() * 1000
+    time = time + 1000 / 30
+    love.timer.sleep(time - t)
+
+    if math.random(2) == 1 then
+        local drop = {
+            x = math.random(0, 15),
                 dy = dy(),
-	        y = 0,
-	        colour
-	    }
-	    drop.colour = math.random(1, 6)
-		table.insert(drops, drop)
-	end
+            y = 0,
+            colour
+        }
+        drop.colour = math.random(1, 6)
+        table.insert(drops, drop)
+    end
 
         function dy()
             dy = math.random()
@@ -52,37 +52,37 @@ function love.update(dt)
             end
         end
 
-	for i, drop in ipairs(drops) do
-		drop.y = drop.y + drop.dy
-		if drop.y > 19 then
-			table.remove(drops, i)
-		end
+    for i, drop in ipairs(drops) do
+        drop.y = drop.y + drop.dy
+        if drop.y > 19 then
+            table.remove(drops, i)
+        end
         if i >= 25 then
             table.remove(drops, i)
         end
-	end
+    end
 
 
 end
 
 function drop()
-	
-	for i, drop in ipairs(drops) do
-	    local y = math.floor(drop.y)
-		wall:pixel(drop.x, y, colours[drop.colour])
-		wall:pixel(drop.x, y - 1, fade1[drop.colour])
-		wall:pixel(drop.x, y - 2, fade2[drop.colour])
-		wall:pixel(drop.x, y - 3, fade3[drop.colour])
-		wall:pixel(drop.x, y - 4, fade4[drop.colour])
-	end
-    
+
+    for i, drop in ipairs(drops) do
+        local y = math.floor(drop.y)
+        wall:pixel(drop.x, y, colours[drop.colour])
+        wall:pixel(drop.x, y - 1, fade1[drop.colour])
+        wall:pixel(drop.x, y - 2, fade2[drop.colour])
+        wall:pixel(drop.x, y - 3, fade3[drop.colour])
+        wall:pixel(drop.x, y - 4, fade4[drop.colour])
+    end
+
 end
 
 function love.draw()
 
     drop()
-	-- send the stuff abroad
-	wall:draw()
+    -- send the stuff abroad
+    wall:draw()
 end
 
 
