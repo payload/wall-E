@@ -35,6 +35,7 @@ function love.update(dt)
 	if math.random(2) == 1 then
 	    local drop = { 
 	        x = math.random(0, 15),
+                dy = dy(),
 	        y = 0,
 	        colour
 	    }
@@ -42,11 +43,23 @@ function love.update(dt)
 		table.insert(drops, drop)
 	end
 
+        function dy()
+            dy = math.random()
+            if dy >= 0.4 then
+                return dy
+            else
+                return 1
+            end
+        end
+
 	for i, drop in ipairs(drops) do
-		drop.y = drop.y + 1
-		if drop.y > 18 then
+		drop.y = drop.y + drop.dy
+		if drop.y > 19 then
 			table.remove(drops, i)
 		end
+        if i >= 25 then
+            table.remove(drops, i)
+        end
 	end
 
 
