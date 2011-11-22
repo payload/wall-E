@@ -29,11 +29,7 @@ end
 
 drops = {}
 -- colours = {"ff0000", "0000ff", "00ff00", "ff00ff", "ffff00", "00ffff"}
-colours = {
-    {255,0,0}, {0,0,255}, {0,255,0}, {255,0,255}, {255,255,0}, {0,255,255},
-    fadesteps = 10,
-    
-}
+colours = {{255,0,0}, {0,0,255}, {0,255,0}, {255,0,255}, {255,255,0}, {0,255,255}}
 
 function love.update(dt)
     -- constant 30 FPS
@@ -46,7 +42,8 @@ function love.update(dt)
             x = math.random(0, 15),
             dy = dy(),
             y = 0,
-            colour = colours[math.random(1, 6)]
+            colour = colours[math.random(1, 6)],
+            fadesteps = math.random(4,10),
         }
         local p, r,g,b
         r, g, b = unpack(drop.colour)
@@ -68,7 +65,7 @@ function love.update(dt)
 
     for i, drop in ipairs(drops) do
         drop.y = drop.y + drop.dy
-        if drop.y > 15 + colours.fadesteps + 1 then
+        if drop.y > 15 + drop.fadesteps + 1 then
             table.remove(drops, i)
         end
         if i >= 30 then
@@ -86,7 +83,7 @@ function drop()
         wall:pixel(drop.x, y, tohex(drop.colour))
 
         local p, r,g,b
-        local steps = colours.fadesteps
+        local steps = drop.fadesteps
         for i = steps, 0, -1 do
             p = inbound(i * 1/(steps+1))
             r, g, b = unpack(drop.colour)
