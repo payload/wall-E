@@ -1,6 +1,15 @@
 require "helper"
 require "wall"
 
+function tohex(colour)
+    return string.format("%.2x%.2x%.2x",unpack(colour))
+end
+
+function inbound(p)
+    if p > 1 then p = 1 elseif p < 0 then p = 0 end
+    return p
+end
+
 function love.keypressed(key)
     if key == "escape" then
         love.event.push "q"
@@ -8,7 +17,6 @@ function love.keypressed(key)
     end
 
 end
-
 
 function love.load()
     wall = Wall("ledwall", 1338, 3)
@@ -20,11 +28,12 @@ function love.load()
 end
 
 drops = {}
-colours = {"ff0000", "0000ff", "00ff00", "ff00ff", "ffff00", "00ffff"}
-fade1   = {"bb0000", "0000bb", "00bb00", "bb00bb", "bbbb00", "00bbbb"}
-fade2   = {"770000", "000077", "007700", "770077", "777700", "007777"}
-fade3   = {"330000", "000033", "003300", "330033", "333300", "003333"}
-fade4   = {"000000", "000000", "000000", "000000", "000000", "000000"}
+-- colours = {"ff0000", "0000ff", "00ff00", "ff00ff", "ffff00", "00ffff"}
+colours = {
+    {255,0,0}, {0,0,255}, {0,255,0}, {255,0,255}, {255,255,0}, {0,255,255},
+    fadesteps = 10,
+    
+}
 
 function love.update(dt)
     -- constant 30 FPS
@@ -35,11 +44,16 @@ function love.update(dt)
     if math.random(2) == 1 then
         local drop = {
             x = math.random(0, 15),
-                dy = dy(),
+            dy = dy(),
             y = 0,
-            colour
+            colour = colours[math.random(1, 6)]
         }
-        drop.colour = math.random(1, 6)
+        local p, r,g,b
+        r, g, b = unpack(drop.colour)
+        p = inbound(drop.dy * 1.3)
+        r, g, b = r*p, g*p, b*p
+        drop.colour = {r,g,b}
+        
         table.insert(drops, drop)
     end
 
@@ -54,10 +68,10 @@ function love.update(dt)
 
     for i, drop in ipairs(drops) do
         drop.y = drop.y + drop.dy
-        if drop.y > 19 then
+        if drop.y > 15 + colours.fadesteps + 1 then
             table.remove(drops, i)
         end
-        if i >= 25 then
+        if i >= 30 then
             table.remove(drops, i)
         end
     end
@@ -66,14 +80,19 @@ function love.update(dt)
 end
 
 function drop()
-
-    for i, drop in ipairs(drops) do
+    for _, drop in ipairs(drops) do
         local y = math.floor(drop.y)
-        wall:pixel(drop.x, y, colours[drop.colour])
-        wall:pixel(drop.x, y - 1, fade1[drop.colour])
-        wall:pixel(drop.x, y - 2, fade2[drop.colour])
-        wall:pixel(drop.x, y - 3, fade3[drop.colour])
-        wall:pixel(drop.x, y - 4, fade4[drop.colour])
+        --wall:pixel(drop.x, y, colours[drop.colour])
+        wall:pixel(drop.x, y, tohex(drop.colour))
+
+        local p, r,g,b
+        local steps = colours.fadesteps
+        for i = steps, 0, -1 do
+            p = inbound(i * 1/(steps+1))
+            r, g, b = unpack(drop.colour)
+            r, g, b = r*p, g*p, b*p
+            wall:pixel(drop.x, y - steps + i - 1, tohex({r,g,b}))
+        end
     end
 
 end
@@ -84,6 +103,3 @@ function love.draw()
     -- send the stuff abroad
     wall:draw()
 end
-
-
-
