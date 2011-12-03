@@ -102,17 +102,18 @@ end
 function Field:collapse()
 	local grid = self.grid
 	local ret = false
-	local z = self.layer
-	for x = 1, self.width do
-		local drop = false
-		for y = self.height, 1, -1 do
-			drop = drop or grid[z][y][x] == 0
-			if drop then
-				grid[z][y][x] = grid[z][y - 1] and grid[z][y - 1][x] or 0
-				ret = grid[z][y][x] > 0 or ret
-			end
-		end
-	end
+    for z = 1, self.width do
+        for x = 1, self.width do
+            local drop = false
+            for y = self.height, 1, -1 do
+                drop = drop or grid[z][y][x] == 0
+                if drop then
+                    grid[z][y][x] = grid[z][y - 1] and grid[z][y - 1][x] or 0
+                    ret = grid[z][y][x] > 0 or ret
+                end
+            end
+        end
+    end
 	return ret
 end
 
@@ -168,7 +169,7 @@ function Field:update()
 
 			-- remove gems
 			for _, coords in pairs(self.gems_in_line) do
-				self.grid[self.layer][coords.y][coords.x] = 0
+				self.grid[coords.z][coords.y][coords.x] = 0
 				self.score = self.score + 1
 			end
 			self.gems_in_line = {}
@@ -257,6 +258,22 @@ function Field:update()
 	end
 end
 
+local spiral = {}
+do
+    local p = { x = 0, y = 0 }
+    local d, n, s = "y", 1, 1
+    for c = 1, 3 do
+        for _ = 1, 2 do
+            for i = 1, n do
+                table.insert(spiral, {p.x,p.y})
+                p[d] = p[d] + s*1
+            end
+        d = d == "y" and "x" or "y"
+        end
+        s = s * -1
+        n = n + 1
+    end
+end
 
 function Field:findGemsInLine()
 
@@ -265,62 +282,42 @@ function Field:findGemsInLine()
 	local grid = self.grid
 	local z = self.layer
 
-	local function addGem(x, y)
-		self.gems_in_line[y .. " " .. x] = { x = x, y = y }
+	local function addGem(x, y, z)
+		self.gems_in_line[y .. " " .. x .. " " .. z] = { x = x, y = y, z = z }
 	end
 
-	-- [-] check
-	for y = 1, self.height do
-		for x = 1, self.width-2 do
-			if grid[z][y][x] > 0 and
-			   grid[z][y][x] == grid[z][y][x + 1] and
-			   grid[z][y][x] == grid[z][y][x + 2] then
-				addGem(x, y)
-				addGem(x + 1, y)
-				addGem(x + 2, y)
-				self.combo_count = self.combo_count + 1
-			end
-		end
-	end
-	-- [|] check
-	for x = 1, self.width do
-		for y = 1, self.height-2 do
-			if grid[z][y][x] > 0 and
-			   grid[z][y][x] == grid[z][y + 1][x] and
-			   grid[z][y][x] == grid[z][y + 2][x] then
-				addGem(x, y)
-				addGem(x, y + 1)
-				addGem(x, y + 2)
-				self.combo_count = self.combo_count + 1
-			end
-		end
-	end
-	-- [\] check
-	for y = 1, self.height-2 do
-		for x = 1, self.width-2 do
-			if grid[z][y][x] > 0 and
-			   grid[z][y][x] == grid[z][y + 1][x + 1] and
-			   grid[z][y][x] == grid[z][y + 2][x + 2] then
-				addGem(x, y)
-				addGem(x + 1, y + 1)
-				addGem(x + 2, y + 2)
-				self.combo_count = self.combo_count + 1
-			end
-		end
-	end
-	-- [/] check
-	for y = 1, self.height-2 do
-		for x = 3, self.width do
-			if grid[z][y][x] > 0 and
-			   grid[z][y][x] == grid[z][y + 1][x - 1] and
-			   grid[z][y][x] == grid[z][y + 2][x - 2] then
-				addGem(x, y)
-				addGem(x - 1, y + 1)
-				addGem(x - 2, y + 2)
-				self.combo_count = self.combo_count + 1
-			end
-		end
-	end
+    local function getCell(x, y, z)
+        z = grid[z]
+        if z ~= nil then
+            y = z[y]
+            if y ~= nil then
+                return y[x]
+            end
+        end
+    end
+
+    for z = 1, self.width-2 do
+        for y = 1, self.height-2 do
+            for x = 1, self.width-2 do
+                for _, range in ipairs({ {1,9,1}, {2,5,0} }) do
+                    local _y = range[3]
+                    for i = range[1], range[2] do
+                        local _x, _z = spiral[i][1], spiral[i][2]
+                        local cell = getCell(x,y,z)
+                        if cell > 0 and
+                           cell == getCell(x + 1*_x, y + 1*_y, z + 1*_z) and
+                           cell == getCell(x + 2*_x, y + 2*_y, z + 2*_z) then
+                            addGem(x, y, z)
+                            addGem(x + 1*_x, y + 1*_y, z + 1*_z)
+                            addGem(x + 2*_x, y + 2*_y, z + 2*_z)
+                            self.combo_count = self.combo_count + 1
+                        end
+                    end
+                    -- the turbine
+                end
+            end
+        end
+    end
 
 	-- return true if we found something
 	return next(self.gems_in_line) ~= nil
