@@ -8,6 +8,10 @@ nr = 32
 env = {
     stars = {level=3},
 }
+stats = {
+    enemies = 0,
+    targets = 0,
+}
 
 
 
@@ -310,6 +314,7 @@ function Enemy:update()
         self.flash = self.flash - 1
 
         if self.flash == 0 then
+            stats.targets = stats.targets + 1
             self:destroy()
         end
     end
@@ -357,7 +362,7 @@ function Projectile:init(opts)
     self.pos = Vector(opts)
     self.dir = Vector(opts.dir)
     self.color = opts.color or hex(0, 80, 180)
-    self.energy = opts.energy or 10
+    self.energy = opts.energy or 15
     self.max_energy = self.energy
     self.life = nil -- will be set by parent
     self.source = opts.source
@@ -377,6 +382,7 @@ function Projectile:update()
     for _, enemy in pairs(env.enemies or {}) do
         local c = self.source.coords:clone():sub(self.source.pos):add(self.pos)
         if c:eq(enemy.coords, 1) then
+            stats.enemies = stats.enemies + 1
             enemy:destroy()
             self:destroy()
             return
@@ -527,6 +533,11 @@ end
 function love.keypressed(key)
     if key == "escape" then
         love.event.push "q"
+    end
+    if key == "escape" or key == "q" then
+        print("Statistics")
+        print("target hits:", stats.targets)
+        print("enemies killed:", stats.enemies)
     end
 end
 
