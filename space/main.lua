@@ -142,8 +142,10 @@ function Player:update()
             table.insert(newstate, oc)
         end
     end
-    self.pos.x = inroundbound(self.pos.x, 0, wall.width)
-    self.pos.y = inroundbound(self.pos.y, 0, wall.height)
+    local cx, cy
+    self.pos.x, cx = inroundbound_with_count(self.pos.x, 0, wall.width)
+    self.pos.y, cy = inroundbound_with_count(self.pos.y, 0, wall.height)
+    self.coords:add { x = -cx * wall.width, y = -cy * wall.height }
     if #newstate > 0 then
         self._state = newstate
     end
