@@ -156,10 +156,7 @@ function Player:update()
     local cx, cy
     self.pos.x, cx = inroundbound_with_count(self.pos.x, 0, wall.width)
     self.pos.y, cy = inroundbound_with_count(self.pos.y, 0, wall.height)
-    self.coords:add {
-        x = -cx * wall.width  * 0.5,
-        y = -cy * wall.height * 0.5,
-    }
+
     if #newstate > 0 then
         self._state = newstate
     end
@@ -302,10 +299,13 @@ function Enemy:update()
         self.flash = self.flash - 1
 
         if self.flash == 0 then
-            self.source[self] = nil
-            env.enemys.length = env.enemys.length - 1
+            self:destroy()
         end
     end
+end
+
+function Enemy:destroy()
+    self.source[self] = nil
 end
 
 function Enemy:draw()
@@ -367,13 +367,20 @@ end
 
 function Projectile:update()
     if self.life == nil then return end
+    -- deceased?
     self.energy = self.energy - 1
     if self.energy == 0 then
-        self.source.projectiles[self] = nil
-        self.source.projectiles.length = self.source.projectiles.length - 1
-        self.life = nil -- delete, or just simply die
-        return
+        return self:destroy()
     end
+    -- hit?
+    for _, enemy in ipairs(env.enemys or {}) do
+        if self.coords:eq(enemy.coords, 0.1) then
+            enemy:destroy()
+            self:destroy()
+            return
+        end
+    end
+    -- direction
     local rel_energy = self.energy/self.max_energy
     if rel_energy > 0.2 then
         local dir = Vector()
@@ -384,6 +391,12 @@ function Projectile:update()
         self.pos:add(dir:norm():mul(rel_energy))
     end
     self.pos:add(self.dir)
+end
+
+function Projectile:destroy()
+    self.source.projectiles[self] = nil
+    self.source.projectiles.length = self.source.projectiles.length - 1
+    self.life = nil -- delete, or just simply die
 end
 
 function Projectile:draw()
