@@ -113,6 +113,8 @@ function Star:update()
             self.dir[c] = operator[o](self.dir[c], -0.6)
         end
         self.dir:norm():mul(0.6)
+    else
+        self.dir:norm():mul(0.1)
     end
 end
 
@@ -148,6 +150,11 @@ function Player:update()
     self.coords:add { x = -cx * wall.width, y = -cy * wall.height }
     if #newstate > 0 then
         self._state = newstate
+    end
+
+    -- halt
+    if wall.input[1].b then
+        self._state = {}
     end
 
     -- direction
@@ -349,8 +356,6 @@ function love.load()
                 color = hex( starlight(((174-level*20)*R())^2) ),
 --                 color = hex( starlight(30000*R()) ),
             }
-
-            star.dir:norm():mul(0.1)
 
 --             env.stars[1][(level-1)*10+i] = star
             env.stars[level][i] = star
