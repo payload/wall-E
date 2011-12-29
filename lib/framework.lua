@@ -2,6 +2,7 @@
 require 'socket'
 math.randomseed(socket.gettime()*10000)
 
+ceil = math.ceil
 floor = math.floor
 round = function (x)
     return floor(x+0.5)

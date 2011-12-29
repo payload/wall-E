@@ -151,7 +151,10 @@ function Player:update()
     local cx, cy
     self.pos.x, cx = inroundbound_with_count(self.pos.x, 0, wall.width)
     self.pos.y, cy = inroundbound_with_count(self.pos.y, 0, wall.height)
-    self.coords:add { x = -cx * wall.width, y = -cy * wall.height }
+    self.coords:add {
+        x = -cx * wall.width  * 0.5,
+        y = -cy * wall.height * 0.5,
+    }
     if #newstate > 0 then
         self._state = newstate
     end
@@ -267,8 +270,10 @@ function Enemy:init(opts)
     self.coords = Vector(opts)
     self.flash = nil
     self.dir = Vector(opts.dir)
+    self.radius = opts.radius or 3
     self.color = opts.color or hex(180, 0, 0)
     self.away_color = opts.away_color or hex(60, 0, 0)
+    self.flash_color = opts.flash_color or hex(180, 60, 0)
     self.source = opts.source
     if not self.source then
         error("no source given")
@@ -306,13 +311,29 @@ end
 function Enemy:draw()
     local pos = self.coords:clone():sub(self.origin.coords):add(self.origin.pos)
     local x,y
-    x = inbound(pos.x, 1, wall.width)
-    y = inbound(pos.y, 1, wall.height)
+    x = inbound(pos.x, 1, wall.width)  - 1
+    y = inbound(pos.y, 1, wall.height) - 1
     local color = self.color
-    if pos.x ~= x or pos.y ~= y then
-        color = self.away_color
+    if self.flash then
+        local r = self.radius/self.flash
+        color = self.flash_color
+        for ry = floor(y-r), ceil(y+r) do
+            if ry == inbound(ry, 0, wall.height-1) then
+                for rx = floor(x-r), ceil(x+r) do
+                    if rx == inbound(rx, 0, wall.width-1) then
+                        if Vector({x=rx,y=ry}):sub({x=x,y=y}):len() <= r then
+                            wall:pixel(floor(rx), floor(ry), color)
+                        end
+                    end
+                end
+            end
+        end
+    else
+        if pos.x ~= x+1 or pos.y ~= y+1 then
+            color = self.away_color
+        end
+        wall:pixel(floor(x), floor(y), color)
     end
-    wall:pixel(floor(x-1), floor(y-1), color)
 end
 
 
@@ -323,7 +344,7 @@ function Projectile:init(opts)
     opts = opts or {}
     self.pos = Vector(opts)
     self.dir = Vector(opts.dir)
-    self.color = opts.color or hex(180, 20, 0)
+    self.color = opts.color or hex(0, 80, 180)
     self.energy = opts.energy or 10
     self.max_energy = self.energy
     self.life = nil -- will be set by parent
