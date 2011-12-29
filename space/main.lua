@@ -42,6 +42,7 @@ end
 
 Vector = Object:new()
 function Vector:init(opts)
+    opts = opts or {}
     self.x = opts.x or 0.0
     self.y = opts.y or 0.0
 end
@@ -82,7 +83,13 @@ function Vector:len()
 end
 
 function Vector:norm()
-    return self:mul(1/self:len())
+    local len = self:len()
+    if len < 0.00000001 then
+        self:mul(0)
+    else
+        self:mul(1/len)
+    end
+    return self -- chainable
 end
 
 --------------------------------------------------------------------------------
@@ -91,7 +98,7 @@ Star = Object:new()
 function Star:init(opts)
     opts = opts or {}
     self.pos = Vector(opts)
-    self.dir = Vector(opts.dir or {})
+    self.dir = Vector(opts.dir)
     self.color = opts.color or hex( 20, 20, 0 )
 end
 
@@ -103,15 +110,15 @@ function Star:update()
     if #(env.player._state) > 0 then
         for _, oc in ipairs(env.player._state) do
             local o, c = oc:sub(1,1), oc:sub(2)
-            self.dir[c] = operator[o](self.dir[c], -1)
+            self.dir[c] = operator[o](self.dir[c], -0.6)
         end
-        self.dir:norm():mul(0.4)
+        self.dir:norm():mul(0.6)
     end
 end
 
 function Star:draw()
     local x, y = self.pos.x, self.pos.y
-    wall:pixel(floor(x), floor(y), self.color)
+    wall:pixel(round(x), round(y), self.color)
 end
 
 --------------------------------------------------------------------------------
@@ -122,6 +129,7 @@ function Player:init(opts)
     self.pos = Vector(opts)
     self.color = opts.color or hex(200, 200, 200)
     self._state = {}
+    self.projectiles = setmetatable({length=0}, { __mode = 'k' })
 end
 
 function Player:update()
@@ -133,15 +141,47 @@ function Player:update()
             table.insert(newstate, oc)
         end
     end
+    self.pos.x = inroundbound(self.pos.x, 0, wall.width)
+    self.pos.y = inroundbound(self.pos.y, 0, wall.height)
     if #newstate > 0 then
         self._state = newstate
     end
 
-    self.pos.x = inroundbound(self.pos.x, 0, wall.width)
-    self.pos.y = inroundbound(self.pos.y, 0, wall.height)
+    -- shoot
+    if wall.input[1].a and self.projectiles.length <3 then
+        local dir = Vector()
+        for _, oc in ipairs(self._state) do
+            local o, c = oc:sub(1,1), oc:sub(2)
+            dir[c] = operator[o](dir[c], 1)
+        end
+        if dir:len() > 0 then
+            local projectile = Projectile {
+                x = self.pos.x+1,
+                y = self.pos.y+1,
+                dir = dir:norm():mul(0.8),
+            }
+            projectile.life = projectile -- self reference
+    --         table.insert(self.projectiles, projectile)
+            self.projectiles[projectile] = projectile
+            self.projectiles.length = self.projectiles.length + 1
+        end
+    end
+
+    for key, projectile in pairs(self.projectiles) do
+        if key ~= "length" then
+            projectile:update()
+        end
+    end
+
 end
 
 function Player:draw()
+    for key, projectile in pairs(self.projectiles) do
+        if key ~= "length" then
+            projectile:draw()
+        end
+    end
+
     local x, y = floor(self.pos.x), floor(self.pos.y)
     wall:pixel(x, y, self.color)
 
@@ -150,9 +190,52 @@ function Player:draw()
             local o, c = oc:sub(1,1), oc:sub(2)
             local coord = { x=x , y=y }
             coord[c] = operator[o](coord[c], -1)
-            coord[c] = inbound(coord[c], 0, wall[({x="width",y="height"})[c]])
+            coord[c] = inbound(coord[c], 1, wall[({x="width",y="height"})[c]])
             wall:pixel(coord.x, coord.y, self.color)
         end
+    end
+
+end
+
+--------------------------------------------------------------------------------
+
+Projectile = Object:new()
+function Projectile:init(opts)
+    opts = opts or {}
+    self.pos = Vector(opts)
+    self.dir = Vector(opts.dir)
+    self.color = opts.color or hex(180, 20, 0)
+    self.energy = opts.energy or 10
+    self.max_energy = self.energy
+    self.life = nil -- will be set by parent
+end
+
+function Projectile:update()
+    if self.life == nil then return end
+    self.energy = self.energy - 1
+    if self.energy == 0 then
+        env.player.projectiles[self] = nil
+        env.player.projectiles.length = env.player.projectiles.length - 1
+        self.life = nil -- delete, or just simply die
+        return
+    end
+    local rel_energy = self.energy/self.max_energy
+    if rel_energy > 0.2 then
+        local dir = Vector()
+        for _, oc in ipairs(env.player._state) do
+            local o, c = oc:sub(1,1), oc:sub(2)
+            dir[c] = operator[o](dir[c], 1)
+        end
+        self.pos:add(dir:norm():mul(rel_energy))
+    end
+    self.pos:add(self.dir)
+end
+
+function Projectile:draw()
+    if self.life == nil then return end
+    if self.pos.x == inbound(self.pos.x, 1, wall.width) and
+       self.pos.y == inbound(self.pos.y, 1, wall.height) then
+        wall:pixel(round(self.pos.x-1), round(self.pos.y-1), self.color)
     end
 end
 
@@ -168,7 +251,7 @@ function update()
     end
 
     for level = 1, env.stars.level do
-        if tick%(level*10) then
+        if tick%level == 0 then
             for _, star in ipairs(env.stars[level] or {}) do
                 star:update()
             end
@@ -219,7 +302,7 @@ function love.load()
                     x = (R()*0.2),
                     y = (R()*0.08-0.04),
                 },
-                color = hex( starlight(((174+level*10)*R())^2) ),
+                color = hex( starlight(((174-level*20)*R())^2) ),
 --                 color = hex( starlight(30000*R()) ),
             }
 
