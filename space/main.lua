@@ -510,14 +510,14 @@ function love.load()
     }
 
     env.enemies = setmetatable({}, { __mode = 'k'})
-    local enemy = Enemy {
-        source = env.enemies,
-        origin = env.player,
-        x = 3,
-        y = 3,
-        dir = {x=-0.05, y=-0.05},
-    }
-    env.enemies[enemy] = enemy
+--     local enemy = Enemy {
+--         source = env.enemies,
+--         origin = env.player,
+--         x = 3,
+--         y = 3,
+--         dir = {x=-0.05, y=-0.05},
+--     }
+--     env.enemies[enemy] = enemy
 end
 
 
