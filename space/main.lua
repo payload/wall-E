@@ -8,6 +8,10 @@ nr = 32
 env = {
     stars = {level=3},
 }
+stats = {
+    enemies = 0,
+    targets = 0,
+}
 
 
 
@@ -299,12 +303,14 @@ function Enemy:update()
         self.flash = self.flash - 1
 
         if self.flash == 0 then
+            stats.targets = stats.targets + 1
             self:destroy()
         end
     end
 end
 
 function Enemy:destroy()
+    self.flash = 0
     self.source[self] = nil
 end
 
@@ -356,7 +362,7 @@ function Projectile:init(opts)
     self.pos = Vector(opts)
     self.dir = Vector(opts.dir)
     self.color = opts.color or hex(0, 80, 180)
-    self.energy = opts.energy or 10
+    self.energy = opts.energy or 15
     self.max_energy = self.energy
     self.life = nil -- will be set by parent
     self.source = opts.source
@@ -373,8 +379,10 @@ function Projectile:update()
         return self:destroy()
     end
     -- hit?
-    for _, enemy in ipairs(env.enemys or {}) do
-        if self.coords:eq(enemy.coords, 0.1) then
+    for _, enemy in pairs(env.enemies or {}) do
+        local c = self.source.coords:clone():sub(self.source.pos):add(self.pos)
+        if c:eq(enemy.coords, 1) then
+            stats.enemies = stats.enemies + 1
             enemy:destroy()
             self:destroy()
             return
@@ -435,6 +443,7 @@ function update()
     end
     env.targets.sum = sum
 
+<<<<<<< HEAD
     for key, enemy in pairs(env.enemys or {}) do
         if key ~= "length" then
             enemy:update()
@@ -443,6 +452,10 @@ function update()
     
     if env.enemys.length == 0 then
         add_enemy()
+=======
+    for _, enemy in pairs(env.enemies or {}) do
+        enemy:update()
+>>>>>>> 6997a6629d0d47fe0909ee67b2247258f7c3525b
     end
 
     tick = tick + 1
@@ -462,10 +475,15 @@ function draw()
         target:draw()
     end
 
+<<<<<<< HEAD
     for key, enemy in pairs(env.enemys or {}) do
         if key ~= "length" then
             enemy:draw()
         end
+=======
+    for _, enemy in pairs(env.enemies or {}) do
+        enemy:draw()
+>>>>>>> 6997a6629d0d47fe0909ee67b2247258f7c3525b
     end
 
     env.player:draw()
@@ -543,6 +561,11 @@ end
 function love.keypressed(key)
     if key == "escape" then
         love.event.push "q"
+    end
+    if key == "escape" or key == "q" then
+        print("Statistics")
+        print("target hits:", stats.targets)
+        print("enemies killed:", stats.enemies)
     end
 end
 
