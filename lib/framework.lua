@@ -1,6 +1,7 @@
 
 require 'socket'
 math.randomseed(socket.gettime()*10000)
+floor = math.floor
 
 function R(...)
     return math.random(...)
@@ -33,6 +34,19 @@ function inbound(p, _min, _max)
     if _min == nil then _min = 0 end
     if _max == nil then _max = 1 end
     if p > _max then p = _max elseif p < _min then p = _min end
+    return p
+end
+
+function inroundbound(p, _min, _max)
+    local len = _max - _min
+    if _min == nil then _min = 0 end
+    if _max == nil then _max = 1 end
+    while p < _min do
+        p = p + len
+    end
+    while p > _max do
+        p = p - len
+    end
     return p
 end
 
