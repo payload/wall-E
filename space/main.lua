@@ -291,15 +291,19 @@ end
 
 function Enemy:update()
     if self.flash == nil then
-        if self.coords.x <= 0 and self.coords.y <= 0 then
-            self.flash = 10
-        else
+        for _, target in ipairs(env.targets or {}) do
+            if self.coords:eq(target.coords, 0.1) then
+                self.flash = 10
+                break
+            end
+        end
+
+        if not self.flash then
             local speed = self.dir:len()
-            local to_targets = Vector(self.coords):add(env.targets.sum):neg():norm()
-            local away_from_player = Vector(env.player.coords):sub(self.coords):norm()
+            local to_targets = env.targets.sum:clone():sub(self.coords):norm()
+            local away_from_player = env.player.coords:clone():sub(self.coords):neg():norm():mul(0.1)
             self.dir:add(to_targets):add(away_from_player):norm():mul(speed)
 
-            --self.dir = Vector(self):norm():mul(speed),
             self.coords:add(self.dir)
         end
     end
