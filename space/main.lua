@@ -127,6 +127,7 @@ Player = Object:new()
 function Player:init(opts)
     opts = opts or {}
     self.pos = Vector(opts)
+    self.coords = self.pos:clone()
     self.color = opts.color or hex(200, 200, 200)
     self._state = {}
     self.projectiles = setmetatable({length=0}, { __mode = 'k' })
@@ -147,13 +148,16 @@ function Player:update()
         self._state = newstate
     end
 
+    -- direction
+    local dir = Vector()
+    for _, oc in ipairs(self._state) do
+        local o, c = oc:sub(1,1), oc:sub(2)
+        dir[c] = operator[o](dir[c], 1)
+    end
+    self.coords:add(dir)
+
     -- shoot
     if wall.input[1].a and self.projectiles.length <3 then
-        local dir = Vector()
-        for _, oc in ipairs(self._state) do
-            local o, c = oc:sub(1,1), oc:sub(2)
-            dir[c] = operator[o](dir[c], 1)
-        end
         if dir:len() > 0 then
             local projectile = Projectile {
                 x = self.pos.x+1,
