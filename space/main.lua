@@ -74,6 +74,10 @@ function Vector:mul(val)
     return self -- chainable
 end
 
+function Vector:neg()
+    return self:mul(-1)
+end
+
 function Vector:dot(vec)
     return self.x * vec.x + self.y * vec.y
 end
@@ -182,12 +186,16 @@ function Player:update()
     end
 
     if wall.input[2].left then
+        local speed = 0.05
+        local start_x = R(5, 10) * shuffle({-1,1})[1]
+        local start_y = R(5, 10) * shuffle({-1,1})[1]
+
         local enemy = Enemy {
             source = env.enemys,
             origin = env.player,
-            x = 3,
-            y = 3,
-            dir = {x=-0.05, y=-0.05},
+            x = start_x,
+            y = start_y,
+            dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
         }
         env.enemys[enemy] = enemy
     end
@@ -276,6 +284,12 @@ function Enemy:update()
         if self.coords.x <= 0 and self.coords.y <= 0 then
             self.flash = 10
         else
+            local speed = self.dir:len()
+            local to_targets = Vector(self.coords):add(env.targets.sum):neg():norm()
+            local away_from_player = Vector(env.player.coords):sub(self.coords):norm()
+            self.dir:add(to_targets):add(away_from_player):norm():mul(speed)
+
+            --self.dir = Vector(self):norm():mul(speed),
             self.coords:add(self.dir)
         end
     end
@@ -369,9 +383,12 @@ function update()
 
     env.player:update()
 
+    local sum = Vector()
     for _, target in ipairs(env.targets or {}) do
         target:update()
+        sum:add(target.coords)
     end
+    env.targets.sum = sum
 
     for _, enemy in pairs(env.enemys or {}) do
         enemy:update()
@@ -441,7 +458,7 @@ function love.load()
         y = wall.height*0.5,
     }
 
-    env.targets = {}
+    env.targets = { sum = Vector() }
     env.targets[1] = Target {
         source = env.player,
         x = 0,
