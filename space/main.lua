@@ -96,6 +96,11 @@ function Vector:norm()
     return self -- chainable
 end
 
+function Vector:eq(vec, tolerance)
+    tolerance = tolerance or 0
+    return abs(self.x - vec.x) <= tolerance and abs(self.y - vec.y) <= tolerance
+end
+
 --------------------------------------------------------------------------------
 
 Star = Object:new()
