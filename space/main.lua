@@ -160,6 +160,7 @@ function Player:update()
     if wall.input[1].a and self.projectiles.length <3 then
         if dir:len() > 0 then
             local projectile = Projectile {
+                source  = self,
                 x = self.pos.x+1,
                 y = self.pos.y+1,
                 dir = dir:norm():mul(0.8),
@@ -212,21 +213,25 @@ function Projectile:init(opts)
     self.energy = opts.energy or 10
     self.max_energy = self.energy
     self.life = nil -- will be set by parent
+    self.source = opts.source
+    if not self.source then
+        error("no source given")
+    end
 end
 
 function Projectile:update()
     if self.life == nil then return end
     self.energy = self.energy - 1
     if self.energy == 0 then
-        env.player.projectiles[self] = nil
-        env.player.projectiles.length = env.player.projectiles.length - 1
+        self.source.projectiles[self] = nil
+        self.source.projectiles.length = self.source.projectiles.length - 1
         self.life = nil -- delete, or just simply die
         return
     end
     local rel_energy = self.energy/self.max_energy
     if rel_energy > 0.2 then
         local dir = Vector()
-        for _, oc in ipairs(env.player._state) do
+        for _, oc in ipairs(self.source._state) do
             local o, c = oc:sub(1,1), oc:sub(2)
             dir[c] = operator[o](dir[c], 1)
         end
