@@ -191,9 +191,10 @@ function Player:update()
     end
 
     if wall.input[2].left then
+        local r, range = 10, 20
         local speed = 0.05
-        local start_x = R(5, 10) * shuffle({-1,1})[1]
-        local start_y = R(5, 10) * shuffle({-1,1})[1]
+        local start_x = R(r, range) * shuffle({-1,1})[1]
+        local start_y = R(r, range) * shuffle({-1,1})[1]
 
         local enemy = Enemy {
             source = env.enemies,
