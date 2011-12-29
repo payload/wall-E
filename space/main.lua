@@ -316,6 +316,7 @@ function Enemy:update()
 end
 
 function Enemy:destroy()
+    self.flash = 0
     self.source[self] = nil
 end
 
