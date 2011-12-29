@@ -157,6 +157,7 @@ function Player:update()
         dir[c] = operator[o](dir[c], 1)
     end
     self.coords:add(dir)
+--     print(self.coords.x, self.coords.y)
 
     -- shoot
     if wall.input[1].a and self.projectiles.length <3 then
@@ -168,7 +169,6 @@ function Player:update()
                 dir = dir:norm():mul(0.8),
             }
             projectile.life = projectile -- self reference
-    --         table.insert(self.projectiles, projectile)
             self.projectiles[projectile] = projectile
             self.projectiles.length = self.projectiles.length + 1
         end
@@ -203,6 +203,32 @@ function Player:draw()
     end
 
 end
+
+--------------------------------------------------------------------------------
+
+Target = Object:new()
+function Target:init(opts)
+    opts = opts or {}
+    self.coords = Vector(opts)
+    self.color = opts.color or hex(0, 180, 0)
+    self.source = opts.source
+    if not self.source then
+        error("no source given")
+    end
+end
+
+function Target:update()
+
+end
+
+function Target:draw()
+    local pos = self.coords:clone():sub(self.source.coords):add(self.source.pos)
+    pos.x = inbound(pos.x, 1, wall.width)
+    pos.y = inbound(pos.y, 1, wall.height)
+    wall:pixel(floor(pos.x-1), floor(pos.y-1), self.color)
+end
+
+
 
 --------------------------------------------------------------------------------
 
@@ -271,12 +297,14 @@ function update()
 
     env.player:update()
 
+    for _, target in ipairs(env.targets or {}) do
+        target:update()
+    end
+
     tick = tick + 1
 end
 
 function draw()
-
-
 
     for level = 1, env.stars.level do
         if tick%(level*10) then
@@ -285,6 +313,11 @@ function draw()
             end
         end
     end
+
+    for _, target in ipairs(env.targets or {}) do
+        target:draw()
+    end
+
     env.player:draw()
 
 end
@@ -330,6 +363,12 @@ function love.load()
         y = wall.height*0.5,
     }
 
+    env.targets = {}
+    env.targets[1] = Target {
+        source = env.player,
+        x = 0,
+        y = 0,
+    }
 end
 
 
