@@ -218,6 +218,7 @@ function Target:init(opts)
     opts = opts or {}
     self.coords = Vector(opts)
     self.color = opts.color or hex(0, 180, 0)
+    self.away_color = opts.away_color or hex(0, 60, 0)
     self.source = opts.source
     if not self.source then
         error("no source given")
@@ -230,9 +231,14 @@ end
 
 function Target:draw()
     local pos = self.coords:clone():sub(self.source.coords):add(self.source.pos)
-    pos.x = inbound(pos.x, 1, wall.width)
-    pos.y = inbound(pos.y, 1, wall.height)
-    wall:pixel(floor(pos.x-1), floor(pos.y-1), self.color)
+    local x,y
+    x = inbound(pos.x, 1, wall.width)
+    y = inbound(pos.y, 1, wall.height)
+    local color = self.color
+    if pos.x ~= x or pos.y ~= y then
+        color = self.away_color
+    end
+    wall:pixel(floor(x-1), floor(y-1), color)
 end
 
 
