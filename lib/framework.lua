@@ -41,17 +41,25 @@ function inbound(p, _min, _max)
     return p
 end
 
-function inroundbound(p, _min, _max)
+function inroundbound_with_count(p, _min, _max)
+    local count = 0
     local len = _max - _min
     if _min == nil then _min = 0 end
     if _max == nil then _max = 1 end
     while p < _min do
+        count = count + 1
         p = p + len
     end
     while p > _max do
+        count = count - 1
         p = p - len
     end
-    return p
+    return p, count
+end
+
+function inroundbound(...)
+    local ret, _ = inroundbound_with_count(...)
+    return ret
 end
 
 function sqdist(a, b)
