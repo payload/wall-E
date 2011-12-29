@@ -147,7 +147,10 @@ function Player:update()
     local cx, cy
     self.pos.x, cx = inroundbound_with_count(self.pos.x, 0, wall.width)
     self.pos.y, cy = inroundbound_with_count(self.pos.y, 0, wall.height)
-    self.coords:add { x = -cx * wall.width, y = -cy * wall.height }
+    self.coords:add {
+        x = -cx * wall.width  * 0.5,
+        y = -cy * wall.height * 0.5,
+    }
     if #newstate > 0 then
         self._state = newstate
     end
