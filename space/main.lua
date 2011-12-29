@@ -196,13 +196,13 @@ function Player:update()
         local start_y = R(5, 10) * shuffle({-1,1})[1]
 
         local enemy = Enemy {
-            source = env.enemys,
+            source = env.enemies,
             origin = env.player,
             x = start_x,
             y = start_y,
             dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
         }
-        env.enemys[enemy] = enemy
+        env.enemies[enemy] = enemy
     end
 
     for key, projectile in pairs(self.projectiles) do
@@ -372,7 +372,7 @@ function Projectile:update()
         return self:destroy()
     end
     -- hit?
-    for _, enemy in ipairs(env.enemys or {}) do
+    for _, enemy in ipairs(env.enemies or {}) do
         if self.coords:eq(enemy.coords, 0.1) then
             enemy:destroy()
             self:destroy()
@@ -434,7 +434,7 @@ function update()
     end
     env.targets.sum = sum
 
-    for _, enemy in pairs(env.enemys or {}) do
+    for _, enemy in pairs(env.enemies or {}) do
         enemy:update()
     end
 
@@ -455,7 +455,7 @@ function draw()
         target:draw()
     end
 
-    for _, enemy in pairs(env.enemys or {}) do
+    for _, enemy in pairs(env.enemies or {}) do
         enemy:draw()
     end
 
@@ -509,15 +509,15 @@ function love.load()
         y = 0,
     }
 
-    env.enemys = setmetatable({}, { __mode = 'k'})
+    env.enemies = setmetatable({}, { __mode = 'k'})
     local enemy = Enemy {
-        source = env.enemys,
+        source = env.enemies,
         origin = env.player,
         x = 3,
         y = 3,
         dir = {x=-0.05, y=-0.05},
     }
-    env.enemys[enemy] = enemy
+    env.enemies[enemy] = enemy
 end
 
 
