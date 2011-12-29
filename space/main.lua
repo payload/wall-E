@@ -181,6 +181,17 @@ function Player:update()
         end
     end
 
+    if wall.input[2].left then
+        local enemy = Enemy {
+            source = env.enemys,
+            origin = env.player,
+            x = 3,
+            y = 3,
+            dir = {x=-0.05, y=-0.05},
+        }
+        env.enemys[enemy] = enemy
+    end
+
     for key, projectile in pairs(self.projectiles) do
         if key ~= "length" then
             projectile:update()
@@ -246,6 +257,7 @@ Enemy = Object:new()
 function Enemy:init(opts)
     opts = opts or {}
     self.coords = Vector(opts)
+    self.flash = nil
     self.dir = Vector(opts.dir)
     self.color = opts.color or hex(180, 0, 0)
     self.away_color = opts.away_color or hex(60, 0, 0)
@@ -253,15 +265,32 @@ function Enemy:init(opts)
     if not self.source then
         error("no source given")
     end
+    self.origin = opts.origin
+    if not self.origin then
+        error("no origin given")
+    end
 end
 
 function Enemy:update()
-    self.coords:add(self.dir)
+    if self.flash == nil then
+        if self.coords.x <= 0 and self.coords.y <= 0 then
+            self.flash = 10
+        else
+            self.coords:add(self.dir)
+        end
+    end
 
+    if self.flash then
+        self.flash = self.flash - 1
+
+        if self.flash == 0 then
+            self.source[self] = nil
+        end
+    end
 end
 
 function Enemy:draw()
-    local pos = self.coords:clone():sub(self.source.coords):add(self.source.pos)
+    local pos = self.coords:clone():sub(self.origin.coords):add(self.origin.pos)
     local x,y
     x = inbound(pos.x, 1, wall.width)
     y = inbound(pos.y, 1, wall.height)
@@ -344,7 +373,7 @@ function update()
         target:update()
     end
 
-    for _, enemy in ipairs(env.enemys or {}) do
+    for _, enemy in pairs(env.enemys or {}) do
         enemy:update()
     end
 
@@ -365,7 +394,7 @@ function draw()
         target:draw()
     end
 
-    for _, enemy in ipairs(env.enemys or {}) do
+    for _, enemy in pairs(env.enemys or {}) do
         enemy:draw()
     end
 
@@ -419,13 +448,15 @@ function love.load()
         y = 0,
     }
 
-    env.enemys = {}
-    env.enemys[1] = Enemy {
-        source = env.player,
+    env.enemys = setmetatable({}, { __mode = 'k'})
+    local enemy = Enemy {
+        source = env.enemys,
+        origin = env.player,
         x = 3,
         y = 3,
-        dir = {x=-0.01, y=-0.01}
+        dir = {x=-0.05, y=-0.05},
     }
+    env.enemys[enemy] = enemy
 end
 
 
