@@ -374,8 +374,9 @@ function Projectile:update()
         return self:destroy()
     end
     -- hit?
-    for _, enemy in ipairs(env.enemies or {}) do
-        if self.coords:eq(enemy.coords, 0.1) then
+    for _, enemy in pairs(env.enemies or {}) do
+        local c = self.source.coords:clone():sub(self.source.pos):add(self.pos)
+        if c:eq(enemy.coords, 1) then
             enemy:destroy()
             self:destroy()
             return
