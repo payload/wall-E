@@ -443,7 +443,6 @@ function update()
     end
     env.targets.sum = sum
 
-<<<<<<< HEAD
     for key, enemy in pairs(env.enemys or {}) do
         if key ~= "length" then
             enemy:update()
@@ -452,10 +451,6 @@ function update()
     
     if env.enemys.length == 0 then
         add_enemy()
-=======
-    for _, enemy in pairs(env.enemies or {}) do
-        enemy:update()
->>>>>>> 6997a6629d0d47fe0909ee67b2247258f7c3525b
     end
 
     tick = tick + 1
@@ -475,15 +470,10 @@ function draw()
         target:draw()
     end
 
-<<<<<<< HEAD
     for key, enemy in pairs(env.enemys or {}) do
         if key ~= "length" then
             enemy:draw()
         end
-=======
-    for _, enemy in pairs(env.enemies or {}) do
-        enemy:draw()
->>>>>>> 6997a6629d0d47fe0909ee67b2247258f7c3525b
     end
 
     env.player:draw()
