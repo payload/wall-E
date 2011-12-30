@@ -195,7 +195,7 @@ function Player:update()
     end
 
     if wall.input[2].left then
-        local r, range = 10, 20
+        local r, range = 100, 200
         local speed = 0.05
         local start_x = R(r, range) * shuffle({-1,1})[1]
         local start_y = R(r, range) * shuffle({-1,1})[1]
