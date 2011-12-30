@@ -39,42 +39,52 @@ function Player:update()
             if c == 'x' then
                 if o == '-' then
                     dir.x = -1
-                    self.pos.x = self.pos.x - 1
                 else
                     dir.x = 1
-                    self.pos.x = self.pos.x + 1
                 end
             elseif c == 'y' then
                 if o == '-' then
                     dir.y = -1
-                    self.pos.y = self.pos.y - 1
                 else
                     dir.y = 1
-                    self.pos.y = self.pos.y + 1
                 end
             end
         end
     end
 
+    self.pos.x = self.pos.x + dir.x
+    self.pos.y = self.pos.y + dir.y
+
     local x, y = round(self.pos.x), round(self.pos.y)
+    local reset_player = false
 
     -- if next pixel is boulder don't move
     if #env.level.level > 0 then
         if env.level.level[x][y]  == '#' then
-            self.pos.x = old_pos.x
-            self.pos.y = old_pos.y
+            reset_player = true
         end
     end
 
     -- if next is boulder move boulder too
     if env.level.boxes[x] and env.level.boxes[x][y] then
-        env.level.boxes[x][y] = false
+        -- calculate next position of box
         local box_x = x + dir.x
         local box_y = y + dir.y
-        env.level.boxes[box_x] = env.level.boxes[box_x] or {}
-        env.level.boxes[box_x][box_y] = true
+        -- if box is movebal move :)
+        if env.level.level[box_x][box_y]  ~= '#' then
+            env.level.boxes[x][y] = false
+            env.level.boxes[box_x] = env.level.boxes[box_x] or {}
+            env.level.boxes[box_x][box_y] = true
+        else 
+            reset_player = true
+        end
     end
 
+    -- dont move the player if some unallowed movement occured
+    if reset_player then
+        self.pos.x = old_pos.x
+        self.pos.y = old_pos.y
+    end
     x, y = round(self.pos.x), round(self.pos.y)
     -- remove old position
     wall:pixel(round(old_pos.x), round(old_pos.y), hex(0,0,0))
