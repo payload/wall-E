@@ -25,7 +25,7 @@ function Player:init(opts)
     opts = opts or {}
     self.pos = { x = opts.x, y=opts.y }
     self.old_pos = { x = opts.x, y=opts.y }
-    self.color = opts.color or hex( 255, 255, 255 )
+    self.color = opts.color or hex( 200, 200, 200 )
 end
 
 function Player:update()
@@ -103,18 +103,30 @@ function Level:init(opts)
     self.level_file = io.open('example_level.txt')
     self.level = {}
     self.boxes = {}
-    self.boulder_color = hex( 0, 0, 200 )
+    self.holes = {}
+    self.boulder_color = hex( 0, 0, 150 )
     self.box_color = hex( 200, 200, 0 )
-    self.hole_color = hex( 80, 80, 0)
+    self.hole_color = hex( 150, 0, 0)
+    self.filled_color = hex( 0, 150, 0)
     self.player = {x = 0, y = 0}
 
 end
 
 function Level:update()
+    --redraw holes
+    for x in pairs(self.holes) do
+        for y in pairs(self.holes[x]) do
+            if self.holes[x][y] then
+                wall:pixel(x, y, self.hole_color)
+            end
+        end
+    end
     --redraw boxes
     for x in pairs(self.boxes) do
         for y in pairs(self.boxes[x]) do
-            if self.boxes[x][y] then
+            if self.boxes[x][y] and self.holes[x] and self.holes[x][y] then
+                wall:pixel(x, y, self.filled_color)
+            elseif self.boxes[x][y] then
                 wall:pixel(x, y, self.box_color)
             end
         end
@@ -138,6 +150,14 @@ function Level:draw(opts)
                 self.boxes[pos_x][pos_y] = true
             elseif c == '.' then
                 wall:pixel(pos_x, pos_y, self.hole_color)
+                self.holes[pos_x] = self.holes[pos_x] or {}
+                self.holes[pos_x][pos_y] = true
+            elseif c == '*' then
+                wall:pixel(pos_x, pos_y, self.box_color)
+                self.holes[pos_x] = self.holes[pos_x] or {}
+                self.holes[pos_x][pos_y] = true
+                self.boxes[pos_x] = self.boxes[pos_x] or {}
+                self.boxes[pos_x][pos_y] = true
             elseif c == '@' then
                 env.player.pos.x = pos_x
                 env.player.pos.y = pos_y
