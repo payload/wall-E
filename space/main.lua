@@ -460,13 +460,14 @@ function draw()
         end
     end
 
+    for _, enemy in pairs(env.enemies or {}) do
+        enemy:draw()
+    end
+
     for _, target in ipairs(env.targets or {}) do
         target:draw()
     end
 
-    for _, enemy in pairs(env.enemies or {}) do
-        enemy:draw()
-    end
 
     env.player:draw()
 
