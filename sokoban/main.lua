@@ -7,6 +7,10 @@ require "framework"
 env = {
 }
 
+-- this value is used for blocing new keyentrys
+block_keyevents = false
+
+
 
 -- helpervalues
 -- local __maxbound = 1.5
@@ -34,7 +38,8 @@ function Player:update()
     local old_pos = {x = self.pos.x, y = self.pos.y}
     local dir = {x = 0, y = 0}
     for cursor_dir, oc in pairs({left="-x", right="+x", up="-y", down="+y" }) do
-        if wall.input[1][cursor_dir] then
+        if wall.input[1][cursor_dir] and not block_keyevents then
+            block_keyevents = true
             local o, c = oc:sub(1,1), oc:sub(2)
             if c == 'x' then
                 if o == '-' then
@@ -213,10 +218,14 @@ function love.keypressed(key)
     end
 end
 
+function love.keyreleased(key)
+    block_keyevents = false
+end
+
 function love.update(dt)
     -- constant 30 FPS
     local t = love.timer.getTime() * 1000
-    time = time + 1000 / 13
+    time = time + 1000 / 30
     love.timer.sleep(time - t)
 
     update()
