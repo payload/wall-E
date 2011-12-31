@@ -71,7 +71,7 @@ function Player:update()
         local box_x = x + dir.x
         local box_y = y + dir.y
         -- if box is movebal move :)
-        if env.level.level[box_x][box_y]  ~= '#' then
+        if env.level.level[box_x][box_y]  ~= '#' and not (env.level.boxes[box_x] and env.level.boxes[box_x][box_y]) then
             env.level.boxes[x][y] = false
             env.level.boxes[box_x] = env.level.boxes[box_x] or {}
             env.level.boxes[box_x][box_y] = true
