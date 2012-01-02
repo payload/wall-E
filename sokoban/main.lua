@@ -9,8 +9,7 @@ env = {
 
 -- this value is used for blocing new keyentrys
 block_keyevents = false
-
-
+level_stack = {}
 
 -- helpervalues
 -- local __maxbound = 1.5
@@ -33,7 +32,6 @@ function Player:init(opts)
 end
 
 function Player:update()
-
 
     local old_pos = {x = self.pos.x, y = self.pos.y}
     local dir = {x = 0, y = 0}
@@ -105,14 +103,16 @@ end
 
 Level = Object:new()
 function Level:init(opts)
-    self.level_file = io.open('example_level.txt')
+    self.level_size = {x = 16, y = 16}
     self.level = {}
     self.boxes = {}
     self.holes = {}
+    self.current_level = 1
     self.boulder_color = hex( 0, 0, 150 )
     self.box_color = hex( 200, 200, 0 )
     self.hole_color = hex( 150, 0, 0)
     self.filled_color = hex( 0, 150, 0)
+    self.background_color = hex( 0, 0, 0)
     self.player = {x = 0, y = 0}
 
 end
@@ -142,7 +142,17 @@ function Level:draw(opts)
     local pos_x = 0
     local pos_y = 0
 
-    for line in self.level_file:lines() do
+    -- redraw whole screen
+    self.level = {}
+    self.boxes = {}
+    self.holes = {}
+    for x = 0, self.level_size['x'] do
+        for y = 0, self.level_size['y'] do
+            wall:pixel(x, y, self.background_color)
+        end
+    end
+
+    for _, line in ipairs(level_stack[self.current_level]) do
         for c in line:gmatch('.') do
             pos_x = pos_x + 1
             self.level[pos_x] = self.level[pos_x] or {}
@@ -173,6 +183,15 @@ function Level:draw(opts)
     end
 end
 
+function Level:nextLevel(opts)
+    self.current_level = (self.current_level) % #level_stack + 1
+    self:draw()
+end
+
+function Level:restartLevel(opts)
+    self:draw()
+end
+
 --------------------------------------------------------------------------------
 
 function update()
@@ -186,7 +205,6 @@ end
 
 function draw()
 
-    env.level:draw()
     env.player:draw()
 
 end
@@ -194,6 +212,25 @@ end
 --------------------------------------------------------------------------------
 
 function love.load()
+    local level_file = io.open('level.txt')
+
+
+    local i = 0
+    local level_counter = 0
+    for line in level_file:lines() do
+        -- first 6 lines are copyright informations
+        if i > 6 then
+            -- empty line means new level
+            if line == '' then
+                level_counter = level_counter + 1
+            else
+                level_stack[level_counter] = level_stack[level_counter] or {}
+                table.insert(level_stack[level_counter], line)
+            end
+        end
+        i = i + 1
+    end
+
     wall = Wall(false, 1338, 3, false) -- "176.99.24.251"
     --wall = Wall('176.99.24.251', 1338, 2, false) -- "176.99.24.251"
 
@@ -208,6 +245,8 @@ function love.load()
 
     env.level = Level {}
 
+    env.level:draw()
+
     tick = 0
 
 end
@@ -215,6 +254,12 @@ end
 function love.keypressed(key)
     if key == "escape" then
         love.event.push "q"
+    end
+    if key == "n" then
+        env.level:nextLevel()
+    end
+    if key == "r" then
+        env.level:restartLevel()
     end
 end
 
@@ -225,7 +270,7 @@ end
 function love.update(dt)
     -- constant 30 FPS
     local t = love.timer.getTime() * 1000
-    time = time + 1000 / 30
+    time = time + 1000 / 23
     love.timer.sleep(time - t)
 
     update()
