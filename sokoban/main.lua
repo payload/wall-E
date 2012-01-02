@@ -90,7 +90,7 @@ function Player:update()
     end
     x, y = round(self.pos.x), round(self.pos.y)
     -- remove old position
-    wall:pixel(round(old_pos.x), round(old_pos.y), hex(0,0,0))
+    wall:pixel(round(old_pos.x), round(old_pos.y), env.level.background_color)
     wall:pixel(x, y, self.color)
     --end
 end
@@ -112,7 +112,7 @@ function Level:init(opts)
     self.box_color = hex( 200, 200, 0 )
     self.hole_color = hex( 150, 0, 0)
     self.filled_color = hex( 0, 150, 0)
-    self.background_color = hex( 0, 0, 0)
+    self.background_color = hex(0, 0, 0)
     self.player = {x = 0, y = 0}
 
 end
@@ -152,6 +152,12 @@ function Level:draw(opts)
         end
     end
 
+    -- place the level in the middle of the field
+    local start_pos_x = math.floor((self.level_size.x - level_stack[self.current_level]['width']) / 2 )
+    pos_x = start_pos_x
+    local start_pos_y = math.floor((self.level_size.y - level_stack[self.current_level]['height']) / 2 )
+    pos_y = start_pos_y
+
     for _, line in ipairs(level_stack[self.current_level]) do
         for c in line:gmatch('.') do
             self.level[pos_x] = self.level[pos_x] or {}
@@ -178,7 +184,7 @@ function Level:draw(opts)
             end
             pos_x = pos_x + 1
         end
-        pos_x = 0
+        pos_x = start_pos_x
         pos_y = pos_y + 1
     end
 end
@@ -217,15 +223,20 @@ function love.load()
 
     local i = 0
     local level_counter = 0
+    local current_level_height = 0
     for line in level_file:lines() do
         -- first 6 lines are copyright informations
         if i > 6 then
             -- empty line means new level
             if line == '' then
                 level_counter = level_counter + 1
-            else
-                level_stack[level_counter] = level_stack[level_counter] or {}
+                current_level_height = 0
+            elseif not string.match(line, '^;') then
+                current_level_height = current_level_height + 1
+                level_stack[level_counter] = level_stack[level_counter] or {height = 0, width = 0}
                 table.insert(level_stack[level_counter], line)
+                level_stack[level_counter]['height'] =  current_level_height
+                level_stack[level_counter]['width'] =  math.max(level_stack[level_counter]['width'], string.len(line))
             end
         end
         i = i + 1
