@@ -62,10 +62,8 @@ function Player:update()
     local reset_player = false
 
     -- if next pixel is boulder don't move
-    if #env.level.level > 0 then
-        if env.level.level[x][y]  == '#' then
-            reset_player = true
-        end
+    if env.level.level[x][y]  == '#' then
+        reset_player = true
     end
 
     -- if next is boulder move boulder too
