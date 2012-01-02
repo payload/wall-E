@@ -154,7 +154,6 @@ function Level:draw(opts)
 
     for _, line in ipairs(level_stack[self.current_level]) do
         for c in line:gmatch('.') do
-            pos_x = pos_x + 1
             self.level[pos_x] = self.level[pos_x] or {}
             self.level[pos_x][pos_y] =  c
             if c == '#' then
@@ -177,6 +176,7 @@ function Level:draw(opts)
                 env.player.pos.x = pos_x
                 env.player.pos.y = pos_y
             end
+            pos_x = pos_x + 1
         end
         pos_x = 0
         pos_y = pos_y + 1
