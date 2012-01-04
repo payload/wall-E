@@ -342,17 +342,6 @@ function Enemy:draw()
         wall:pixel(floor(x), floor(y), color)
     end
 end
-function Enemy:addEnemy()
-    local enemy = Enemy {
-        source = env.enemys,
-        origin = env.player,
-        x = start_x,
-        y = start_y,
-        dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
-    }
-    env.enemys[enemy] = enemy
-end
-
 
 --------------------------------------------------------------------------------
 
@@ -379,13 +368,15 @@ function Projectile:update()
         return self:destroy()
     end
     -- hit?
-    for _, enemy in pairs(env.enemies or {}) do
-        local c = self.source.coords:clone():sub(self.source.pos):add(self.pos)
-        if c:eq(enemy.coords, 1) then
-            stats.enemies = stats.enemies + 1
-            enemy:destroy()
-            self:destroy()
-            return
+    for key, enemy in pairs(env.enemies or {}) do
+        if key ~= "length" then
+            local c = self.source.coords:clone():sub(self.source.pos):add(self.pos)
+            if c:eq(enemy.coords, 1) then
+                stats.enemies = stats.enemies + 1
+                enemy:destroy()
+                self:destroy()
+                return
+            end
         end
     end
     -- direction
@@ -443,13 +434,13 @@ function update()
     end
     env.targets.sum = sum
 
-    for key, enemy in pairs(env.enemys or {}) do
+    for key, enemy in pairs(env.enemies or {}) do
         if key ~= "length" then
             enemy:update()
         end
     end
 
-    if env.enemys.length == 0 then
+    if env.enemies.length == 0 then
         add_enemy()
     end
 
@@ -466,18 +457,14 @@ function draw()
         end
     end
 
-    for _, enemy in pairs(env.enemies or {}) do
-        enemy:draw()
+    for key, enemy in pairs(env.enemies or {}) do
+        if key ~= "length" then
+            enemy:draw()
+        end
     end
 
     for _, target in ipairs(env.targets or {}) do
         target:draw()
-    end
-
-    for key, enemy in pairs(env.enemys or {}) do
-        if key ~= "length" then
-            enemy:draw()
-        end
     end
 
     env.player:draw()
@@ -497,8 +484,8 @@ function add_enemy()
         y = start_y,
         dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
     }
-    env.enemys[enemy] = enemy
-    env.enemys.length = env.enemys.length + 1
+    env.enemies[enemy] = enemy
+    env.enemies.length = env.enemies.length + 1
 end
 
 --------------------------------------------------------------------------------
@@ -548,7 +535,7 @@ function love.load()
         y = 0,
     }
 
-    env.enemys = setmetatable({length=0}, { __mode = 'k'})
+    env.enemies = setmetatable({length=0}, { __mode = 'k'})
     add_enemy()
 end
 
