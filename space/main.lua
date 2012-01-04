@@ -195,19 +195,7 @@ function Player:update()
     end
 
     if wall.input[2].left then
-        local r, range = 100, 200
-        local speed = 0.05
-        local start_x = R(r, range) * shuffle({-1,1})[1]
-        local start_y = R(r, range) * shuffle({-1,1})[1]
-
-        local enemy = Enemy {
-            source = env.enemies,
-            origin = env.player,
-            x = start_x,
-            y = start_y,
-            dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
-        }
-        env.enemies[enemy] = enemy
+        add_enemy()
     end
 
     for key, projectile in pairs(self.projectiles) do
@@ -247,7 +235,7 @@ function Target:init(opts)
     opts = opts or {}
     self.coords = Vector(opts)
     self.color = opts.color or hex(0, 180, 0)
-    self.away_color = opts.away_color or hex(0, 60, 0)
+    self.away_color = opts.away_color or hex(0, 100, 0)
     self.source = opts.source
     if not self.source then
         error("no source given")
@@ -279,7 +267,7 @@ function Enemy:init(opts)
     self.dir = Vector(opts.dir)
     self.radius = opts.radius or 3
     self.color = opts.color or hex(180, 0, 0)
-    self.away_color = opts.away_color or hex(60, 0, 0)
+    self.away_color = opts.away_color or hex(100, 0, 0)
     self.flash_color = opts.flash_color or hex(180, 60, 0)
     self.source = opts.source
     if not self.source then
@@ -292,10 +280,11 @@ function Enemy:init(opts)
 end
 
 function Enemy:update()
+    if self.flash == 0 then return end
     if self.flash == nil then
         for _, target in ipairs(env.targets or {}) do
             if self.coords:eq(target.coords, 0.1) then
-                self.flash = 10
+                self.flash = 30
                 break
             end
         end
@@ -326,6 +315,7 @@ function Enemy:destroy()
 end
 
 function Enemy:draw()
+    if self.flash == 0 then return end
     local pos = self.coords:clone():sub(self.origin.coords):add(self.origin.pos)
     local x,y
     x = inbound(pos.x, 1, wall.width)  - 1
@@ -351,6 +341,16 @@ function Enemy:draw()
         end
         wall:pixel(floor(x), floor(y), color)
     end
+end
+function Enemy:addEnemy()
+    local enemy = Enemy {
+        source = env.enemys,
+        origin = env.player,
+        x = start_x,
+        y = start_y,
+        dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
+    }
+    env.enemys[enemy] = enemy
 end
 
 
@@ -443,8 +443,14 @@ function update()
     end
     env.targets.sum = sum
 
-    for _, enemy in pairs(env.enemies or {}) do
-        enemy:update()
+    for key, enemy in pairs(env.enemys or {}) do
+        if key ~= "length" then
+            enemy:update()
+        end
+    end
+
+    if env.enemys.length == 0 then
+        add_enemy()
     end
 
     tick = tick + 1
@@ -468,15 +474,38 @@ function draw()
         target:draw()
     end
 
+    for key, enemy in pairs(env.enemys or {}) do
+        if key ~= "length" then
+            enemy:draw()
+        end
+    end
 
     env.player:draw()
 
+end
+
+function add_enemy()
+    local r, range = 100, 200
+    local speed = 0.05
+    local start_x = R(r, range) * shuffle({-1,1})[1]
+    local start_y = R(r, range) * shuffle({-1,1})[1]
+
+    local enemy = Enemy {
+        source = env.enemies,
+        origin = env.player,
+        x = start_x,
+        y = start_y,
+        dir = Vector({ x = (R()-0.5), y = (R()-0.5) }):norm():mul(speed),
+    }
+    env.enemys[enemy] = enemy
+    env.enemys.length = env.enemys.length + 1
 end
 
 --------------------------------------------------------------------------------
 
 function love.load()
     wall = Wall(false, 1338, 3, false) -- "176.99.24.251"
+    --wall = Wall('176.99.24.251', 1338, 3, false) -- "176.99.24.251"
 
 --     __maxd = math.sqrt(wall.width*wall.height)
 
@@ -519,15 +548,8 @@ function love.load()
         y = 0,
     }
 
-    env.enemies = setmetatable({}, { __mode = 'k'})
---     local enemy = Enemy {
---         source = env.enemies,
---         origin = env.player,
---         x = 3,
---         y = 3,
---         dir = {x=-0.05, y=-0.05},
---     }
---     env.enemies[enemy] = enemy
+    env.enemys = setmetatable({length=0}, { __mode = 'k'})
+    add_enemy()
 end
 
 
