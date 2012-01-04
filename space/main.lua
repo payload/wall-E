@@ -184,8 +184,8 @@ function Player:update()
         if dir:len() > 0 then
             local projectile = Projectile {
                 source  = self,
-                x = self.pos.x+1,
-                y = self.pos.y+1,
+                x = self.pos.x,
+                y = self.pos.y,
                 dir = dir:norm():mul(0.8),
             }
             projectile.life = projectile -- self reference
